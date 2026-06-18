@@ -1,0 +1,183 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Request Rate by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(vllm_proxy_requests_total[5m])) by (client_ip)",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Error Rate by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(vllm_proxy_errors_total[5m])) by (client_ip, error_type)",
+          "legendFormat": "{{ client_ip }} ({{ error_type }})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Prompt Tokens/sec by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(vllm_proxy_prompt_tokens_total[5m])) by (client_ip)",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Completion Tokens/sec by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(vllm_proxy_completion_tokens_total[5m])) by (client_ip)",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "P50 / P95 / P99 Latency by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(vllm_proxy_request_duration_seconds_bucket[5m])) by (le, client_ip))",
+          "legendFormat": "p50 {{ client_ip }}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(vllm_proxy_request_duration_seconds_bucket[5m])) by (le, client_ip))",
+          "legendFormat": "p95 {{ client_ip }}",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(vllm_proxy_request_duration_seconds_bucket[5m])) by (le, client_ip))",
+          "legendFormat": "p99 {{ client_ip }}",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 5 }
+        }
+      }
+    },
+    {
+      "title": "Active Requests by IP",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "vllm_proxy_active_requests",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Total Tokens by IP (cumulative)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum(vllm_proxy_prompt_tokens_total + vllm_proxy_completion_tokens_total) by (client_ip)",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "auto"
+      }
+    },
+    {
+      "title": "Requests by Endpoint",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+      "targets": [
+        {
+          "expr": "sum(vllm_proxy_requests_total) by (endpoint)",
+          "legendFormat": "{{ endpoint }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Top IPs by Total Requests",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(vllm_proxy_requests_total) by (client_ip))",
+          "legendFormat": "{{ client_ip }}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["vllm", "proxy"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "vLLM Proxy - Per IP Metrics",
+  "uid": "vllm-proxy-per-ip"
+}
