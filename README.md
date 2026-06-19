@@ -1,24 +1,27 @@
 # vLLM Proxy — Per-IP Metrics Gateway
 
-FastAPI reverse proxy for vLLM that tracks per-IP metrics (request count, token usage, latency, errors) and exposes them to Prometheus/Grafana.
+FastAPI reverse proxy for vLLM (or Ollama) that tracks per-IP metrics (request count, token usage, latency, errors) and exposes them to Prometheus/Grafana.
 
 ## Architecture
 
 ```
-Client → Nginx (:8080) → FastAPI Proxy (:8000) → vLLM (:30154)
+Client → Nginx (:8080) → FastAPI Proxy (:8000) → vLLM/Ollama (:11434 or :30154)
                               ↓
                          /metrics endpoint
                               ↓
                     Prometheus → Grafana (:3000)
 ```
 
-## Quick Start (with mock vLLM for testing)
+## Quick Start (with Ollama + Phi-2 for testing)
 
 ```bash
-# Start everything including mock vLLM
+# Start everything (Ollama, proxy, Grafana, Prometheus)
 docker compose --profile test up -d --build
 
-# Test it
+# Pull Phi-2 model to Ollama (first time, ~1.6GB, takes 5-10 min)
+./ollama-setup.sh
+
+# Test the proxy
 ./test.sh
 
 # Open Grafana
@@ -26,9 +29,11 @@ docker compose --profile test up -d --build
 # Dashboard: "vLLM Proxy - Per IP Metrics"
 ```
 
+**Note:** First request will be slow (model inference). Subsequent requests faster. Check Grafana to see per-IP metrics in real-time.
+
 ## Production Deploy (real vLLM)
 
-1. Edit `docker-compose.prod.yml` — set `VLLM_PROXY_VLLM_BASE_URL` to your vLLM address
+1. Edit `docker-compose.prod.yml` — set `VLLM_PROXY_VLLM_BASE_URL` to your vLLM address (e.g., `http://172.16.28.63:30154`)
 2. Run:
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
@@ -37,13 +42,15 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Integrate with existing Prometheus
 
-Add this scrape config to your Prometheus:
+Add this scrape config to your Prometheus on `172.16.28.63`:
 
 ```yaml
 - job_name: "vllm-proxy"
   static_configs:
     - targets: ["<proxy-server-ip>:8000"]
 ```
+
+Then Grafana on `172.16.28.63` will automatically pick up the new metrics.
 
 ## Metrics Exposed
 
@@ -73,13 +80,12 @@ Environment variables (prefix `VLLM_PROXY_`):
 │   └── config.py        # Settings
 ├── nginx/
 │   └── default.conf     # Nginx reverse proxy config
-├── mock_vllm/
-│   └── server.py        # Mock vLLM for testing
 ├── grafana/
 │   ├── dashboards/      # Pre-built dashboard JSON
 │   └── provisioning/    # Auto-config datasource + dashboard
-├── docker-compose.yml       # Full stack (with mock, Prometheus, Grafana)
+├── docker-compose.yml       # Full stack (with Ollama, Prometheus, Grafana)
 ├── docker-compose.prod.yml  # Production (proxy + nginx only)
 ├── prometheus.yml           # Prometheus scrape config
+├── ollama-setup.sh          # Pull Phi-2 model to Ollama
 └── test.sh                  # Test script
 ```
