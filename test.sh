@@ -1,10 +1,10 @@
 #!/bin/bash
-# Test script - sends requests to the proxy simulating different client IPs
+# Test script - sends requests to the proxy via Ollama
 # Usage: ./test.sh [PROXY_URL]
 
 PROXY_URL="${1:-http://localhost:8080}"
 
-echo "=== vLLM Proxy Test ==="
+echo "=== vLLM Proxy Test (via Ollama) ==="
 echo "Target: $PROXY_URL"
 echo ""
 
@@ -13,34 +13,33 @@ echo "── Health Check ──"
 curl -s "$PROXY_URL/health" | python3 -m json.tool
 echo ""
 
-# 2. List models
-echo "── List Models ──"
-curl -s "$PROXY_URL/v1/models" | python3 -m json.tool
-echo ""
-
-# 3. Chat completion (normal)
-echo "── Chat Completion ──"
+# 2. Chat completion via Ollama OpenAI API
+echo "── Chat Completion (Ollama via Proxy) ──"
 curl -s "$PROXY_URL/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen-3.5-27b",
-    "messages": [{"role": "user", "content": "Hello, how are you?"}],
-    "max_tokens": 100
+    "model": "phi",
+    "messages": [{"role": "user", "content": "Hello, what is 2+2?"}],
+    "temperature": 0.7,
+    "stream": false
   }' | python3 -m json.tool
 echo ""
 
-# 4. Send multiple requests to generate metrics
-echo "── Sending 10 requests for metrics ──"
-for i in $(seq 1 10); do
+# 3. Send multiple requests to generate metrics
+echo "── Sending 5 requests for metrics ──"
+for i in $(seq 1 5); do
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PROXY_URL/v1/chat/completions" \
     -H "Content-Type: application/json" \
-    -d "{\"model\": \"qwen-3.5-27b\", \"messages\": [{\"role\": \"user\", \"content\": \"Request $i\"}]}")
+    -d "{\"model\": \"phi\", \"messages\": [{\"role\": \"user\", \"content\": \"Request $i: Tell me a short joke\"}], \"max_tokens\": 50, \"stream\": false}")
   echo "  Request $i: HTTP $STATUS"
+  sleep 1
 done
 echo ""
 
-# 5. Check metrics
-echo "── Proxy Metrics ──"
-curl -s "$PROXY_URL/metrics" | grep -E "^vllm_proxy_" | head -30
+# 4. Check metrics endpoint
+echo "── Proxy Metrics Sample ──"
+curl -s "$PROXY_URL/metrics" | grep -E "^vllm_proxy_" | head -20
 echo ""
 echo "=== Done ==="
+echo "View full metrics: $PROXY_URL/metrics"
+
