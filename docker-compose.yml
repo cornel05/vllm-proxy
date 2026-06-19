@@ -1,22 +1,31 @@
 services:
-  # ── Mock vLLM (remove in production, point to real vLLM) ──
-  mock-vllm:
-    build:
-      context: .
-      dockerfile: Dockerfile.mock
+  # ── Ollama (LLM inference server with OpenAI-compatible API) ──
+  ollama:
+    image: ollama/ollama:latest
     ports:
-      - "30154:30154"
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
     profiles:
       - test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── FastAPI Proxy ─────────────────────────────────────────
   app:
     build: .
     environment:
-      - VLLM_PROXY_VLLM_BASE_URL=http://mock-vllm:30154  # Change to real vLLM URL in production
+      - VLLM_PROXY_VLLM_BASE_URL=http://ollama:11434
       - VLLM_PROXY_REQUEST_TIMEOUT=120
     depends_on:
-      - mock-vllm
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
 
   # ── Nginx Gateway ─────────────────────────────────────────
@@ -61,3 +70,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  ollama_data:
