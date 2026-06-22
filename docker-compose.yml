@@ -19,6 +19,8 @@ services:
 
   app:
     build: .
+    ports:
+      - "8000:8000"
     environment:
       - VLLM_PROXY_VLLM_BASE_URL=http://ollama:11434
       - VLLM_PROXY_REQUEST_TIMEOUT=120
@@ -35,6 +37,7 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
     depends_on:
       - app
     restart: unless-stopped
