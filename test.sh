@@ -2,7 +2,7 @@
 # Test script - sends requests to the proxy via Ollama
 # Usage: ./test.sh [PROXY_URL]
 
-PROXY_URL="${1:-http://localhost:8080}"
+PROXY_URL="${1:-http://localhost:8081}"
 
 echo "=== vLLM Proxy Test (via Ollama) ==="
 echo "Target: $PROXY_URL"

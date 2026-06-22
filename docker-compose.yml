@@ -1,5 +1,4 @@
 services:
-  # ── Ollama (LLM inference server with OpenAI-compatible API) ──
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -12,12 +11,12 @@ services:
     profiles:
       - test
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
+      start_period: 20s
 
-  # ── FastAPI Proxy ─────────────────────────────────────────
   app:
     build: .
     environment:
@@ -26,20 +25,20 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+    expose:
+      - "8000"
     restart: unless-stopped
 
-  # ── Nginx Gateway ─────────────────────────────────────────
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
     restart: unless-stopped
 
-  # ── Prometheus ────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -51,7 +50,6 @@ services:
       - app
     restart: unless-stopped
 
-  # ── Grafana ───────────────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
     ports:

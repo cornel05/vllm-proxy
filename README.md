@@ -5,7 +5,7 @@ FastAPI reverse proxy for vLLM (or Ollama) that tracks per-IP metrics (request c
 ## Architecture
 
 ```
-Client → Nginx (:8080) → FastAPI Proxy (:8000) → vLLM/Ollama (:11434 or :30154)
+Client → Nginx (:8081) → FastAPI Proxy (:8000) → vLLM/Ollama (:11434 or :30154)
                               ↓
                          /metrics endpoint
                               ↓
@@ -38,7 +38,7 @@ docker compose --profile test up -d --build
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
-3. Tell users to call `http://<this-server>:8080/v1/chat/completions` instead of vLLM directly
+3. Tell users to call `http://<this-server>:8081/v1/chat/completions` instead of vLLM directly
 
 ### Integrate with existing Prometheus
 
